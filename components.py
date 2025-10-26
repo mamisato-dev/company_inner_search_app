@@ -48,9 +48,9 @@ def display_main_layout():
     # 右カラム: メイン表示部分
     # ==============
     with right_col: 
-        cn.display_app_title()
-        cn.display_initial_ai_message()
-        cn.display_conversation_log()
+        display_app_title()
+        display_initial_ai_message()
+        display_conversation_log()
         
 
 def display_app_title():
