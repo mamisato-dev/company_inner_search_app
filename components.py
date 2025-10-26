@@ -10,16 +10,54 @@ import utils
 import constants as ct
 
 
+
 ############################################################
 # 関数定義
 ############################################################
+### レイアウト変更修正 ###
+def display_main_layout():
+    """
+    アプリ全体のレイアウト構成（左カラム: モード設定,右カラム: メイン画面）
+    """
+    # 左右2カラム構成を作成（左: 狭め、右: 広め）
+    left_col, right_col = st.columns([1, 3])
+
+    # ==============
+    # 左カラム: 利用目的設定欄
+    # ==============
+    with left_col: 
+        st.markdown("### 利用目的")
+        st.session_state.mode = st.radio(
+            "利用目的を選択してください", 
+            [ct.ANSWER_MODE_1, ct.ANSWER_MODE_2], 
+            index = 0,
+            label_visibility = "collapsed"
+        )
+
+        st.markdown("---")
+        # モード別の補足説明
+        if st.session_state.mode == ct.ANSWER_MODE_1:
+            st.markdown("**「社内文書検索」を選択中**")
+            st.info("入力内容に関する社内文書の在り方を検索")
+            st.code("例: 社員の教育方針に関するMTGの議事録", wrap_lines=True, language=None)
+        else: 
+            st.markdown("**「社内問い合わせ」を選択中**")
+            st.info("質問内容に関連する社内文書をもとに回答します。")
+            st.code("例: 人事部に所属している従業員数情報を一覧化して", wrap_lines=True, language=None)
+    # ==============
+    # 右カラム: メイン表示部分
+    # ==============
+    with right_col: 
+        cn.display_app_title()
+        cn.display_initial_ai_message()
+        cn.display_conversation_log()
+        
 
 def display_app_title():
     """
     タイトル表示
     """
     st.markdown(f"## {ct.APP_NAME}")
-
 
 def display_select_mode():
     """
@@ -325,3 +363,4 @@ def display_contact_llm_response(llm_response):
         content["file_info_list"] = file_info_list
 
     return content
+
