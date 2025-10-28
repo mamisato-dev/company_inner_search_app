@@ -17,8 +17,59 @@ import constants as ct
 ### レイアウト変更修正 ###
 def display_main_layout():
     """
-    アプリ全体のレイアウト構成（左カラム: モード設定,右カラム: メイン画面）
+    アプリ全体のレイアウト構成（左カラム: モード設定, 右カラム: メイン画面）
     """
+
+    # ======== CSSでデザイン調整 ========
+    st.markdown(
+        """
+        <style>
+        /*全体の幅をウィンドウにフィット */
+        .block-container{
+            max-width: 100% !important; 
+            padding: 0 2rem 2rem 2rem;
+        }
+
+
+        /* 左カラム（背景を薄いグレーに）*/
+        [data-testid="column"]:first-of-type {
+            background-color: #f5f5f5;
+            padding: 2rem 1rem 2rem 1rem;
+            border-radius: 8px;
+        }
+
+        /* 右カラム（中央寄せ）*/
+        [data-testid="column"]:last-of-type {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* 右カラム（チャット入力欄） */
+        section[data-testid="stChatInput"]{
+            max-width: 70%; 
+            margin-left: auto; 
+            margin-right: 2rem; 
+        }
+
+
+        /* 情報ボックス背景色変更 */
+        div[data-testid = "stMarkdownContainer"] pre{
+            background-color: #eef6ff !important; /* 薄い水色*/
+            border-radius: 6px; 
+            padding: 0.8rem;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
+
+    # ======== 左右カラム構成 ========
+    left_col, right_col = st.columns([1.2, 3], gap="medium")
+
+
+
     # 左右2カラム構成を作成（左: 狭め、右: 広め）
     left_col, right_col = st.columns([1, 3])
 
@@ -40,7 +91,7 @@ def display_main_layout():
             st.markdown("**「社内文書検索」を選択中**")
             st.info("入力内容に関する社内文書の在り方を検索")
             st.code("例: 社員の教育方針に関するMTGの議事録", wrap_lines=True, language=None)
-        else: 
+        else:   
             st.markdown("**「社内問い合わせ」を選択中**")
             st.info("質問内容に関連する社内文書をもとに回答します。")
             st.code("例: 人事部に所属している従業員数情報を一覧化して", wrap_lines=True, language=None)
