@@ -20,6 +20,7 @@ import components as cn
 # （自作）変数（定数）がまとめて定義・管理されているモジュール
 import constants as ct
 
+import traceback
 
 ############################################################
 # 2. 設定関連
@@ -40,11 +41,16 @@ try:
     # 初期化処理（「initialize.py」の「initialize」関数を実行）
     initialize()
 except Exception as e:
+    # エラー特定用
+    st.error("initialize()でエラーが発生しました。以下の内容を確認してください。")
+    st.code(traceback.format_exc(), language="text")
+    
     # エラーログの出力
-    logger.error(f"{ct.INITIALIZE_ERROR_MESSAGE}\n{e}")
+    # logger.error(f"{ct.INITIALIZE_ERROR_MESSAGE}\n{e}")
     # エラーメッセージの画面表示
-    st.error(utils.build_error_message(ct.INITIALIZE_ERROR_MESSAGE), icon=ct.ERROR_ICON)
+    # st.error(utils.build_error_message(ct.INITIALIZE_ERROR_MESSAGE), icon=ct.ERROR_ICON)
     # 後続の処理を中断
+    
     st.stop()
 
 # アプリ起動時のログファイルへの出力

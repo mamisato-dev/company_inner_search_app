@@ -36,6 +36,8 @@ def initialize():
     """
     画面読み込み時に実行する初期化処理
     """
+    print("initialize(): start")   # ← ここ追加
+
     # 初期化データの用意
     initialize_session_state()
     # ログ出力用にセッションIDを生成
@@ -44,6 +46,8 @@ def initialize():
     initialize_logger()
     # RAGのRetrieverを作成
     initialize_retriever()
+
+    print("initialize(): done")    # ← ここ追加
 
 
 def initialize_logger():
@@ -119,7 +123,7 @@ def initialize_retriever():
             doc.metadata[key] = adjust_string(doc.metadata[key])
     
     # 埋め込みモデルの用意
-    embeddings = OpenAIEmbeddings()
+    embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
     
     # チャンク分割用のオブジェクトを作成
     text_splitter = CharacterTextSplitter(
