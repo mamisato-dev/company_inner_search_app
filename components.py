@@ -24,7 +24,7 @@ def display_main_layout():
     st.markdown(
         """
         <style>
-        /*全体の幅をウィンドウにフィット */
+        /* 全体の幅をウィンドウにフィット */
         .block-container{
             max-width: 100% !important; 
             padding: 0 2rem 2rem 2rem;
@@ -55,7 +55,7 @@ def display_main_layout():
 
 
         /* 情報ボックス背景色変更 */
-        div[data-testid = "stMarkdownContainer"] pre{
+        div[data-testid="stMarkdownContainer"] pre{
             background-color: #eef6ff !important; /* 薄い水色*/
             border-radius: 6px; 
             padding: 0.8rem;
@@ -68,10 +68,6 @@ def display_main_layout():
     # ======== 左右カラム構成 ========
     left_col, right_col = st.columns([1.2, 3], gap="medium")
 
-
-
-    # 左右2カラム構成を作成（左: 狭め、右: 広め）
-    left_col, right_col = st.columns([1, 3])
 
     # ==============
     # 左カラム: 利用目的設定欄
@@ -89,7 +85,7 @@ def display_main_layout():
         # モード別の補足説明
         if st.session_state.mode == ct.ANSWER_MODE_1:
             st.markdown("**「社内文書検索」を選択中**")
-            st.info("入力内容に関する社内文書の在り方を検索")
+            st.info("入力内容に関する社内文書のありかを検索")
             st.code("例: 社員の教育方針に関するMTGの議事録", wrap_lines=True, language=None)
         else:   
             st.markdown("**「社内問い合わせ」を選択中**")
