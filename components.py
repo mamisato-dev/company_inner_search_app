@@ -101,6 +101,39 @@ def display_main_layout():
             z-index: 5;
         }
 
+        /* ✅ 右カラム下部に固定された入力エリア */
+        .chat-area .input-area {
+            position: sticky;
+            bottom: 1.5rem;
+            display: flex;
+            justify-content: center;
+            z-index: 20;
+            pointer-events: auto;
+        }
+
+        .chat-area .input-box {
+            width: 85%;
+            max-width: 950px;
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+            background: transparent;
+        }
+
+        /* テキスト入力を幅いっぱいにする */
+        .chat-area .stTextInput input {
+            width: 100% !important;
+        }
+
+        /* 送信ボタン（紙飛行機）をコンパクトに見せる */
+        .chat-area .stButton > button {
+            min-width: 48px;
+            height: 48px;
+            padding: 0 0.5rem;
+            border-radius: 8px;
+            font-size: 18px;
+        }
+
         /* ✅ スクロールバーのデザイン（グレーに） */
         [data-testid="column"]:first-of-type::-webkit-scrollbar {
             width: 6px;
@@ -165,27 +198,35 @@ def display_main_layout():
         if "display_initial_ai_message" in globals():
             display_initial_ai_message()
 
-        if "display_conversation_log" in globals():
-            display_conversation_log()
+        # 会話ログは呼び出し元で制御するため、ここではコンテナを用意するのみとする
+        conversation_container = st.container()
 
         st.markdown("</div>", unsafe_allow_html=True)
 
         # 🟩 ③ チャット入力欄（右カラム内に配置）
-        # Streamlit の組み込みチャット入力はページ下部に常に表示されることがあるため、
-        # ここではフォーム（st.form + st.text_input）を使って右カラム内にのみ入力欄を配置します。
         # 右カラムの入力欄の「上」に一時表示用のコンテナを用意する
         response_container = st.container()
 
+        # 入力欄は右カラム下部に固定（sticky）で表示するため、
+        # markup で wrapper を作ってからフォームを配置する
+        st.markdown('<div class="input-area">', unsafe_allow_html=True)
+        st.markdown('<div class="input-box">', unsafe_allow_html=True)
+
         with st.form(key="chat_form", clear_on_submit=True):
-            user_input = st.text_input("", placeholder=ct.CHAT_INPUT_HELPER_TEXT, key="main_chat_text")
-            submitted = st.form_submit_button("送信")
+            cols = st.columns([9, 1], gap="small")
+            with cols[0]:
+                user_input = st.text_input("", placeholder=ct.CHAT_INPUT_HELPER_TEXT, key="main_chat_text")
+            with cols[1]:
+                # 紙飛行機マークをボタンラベルにして送信ボタンにする
+                submitted = st.form_submit_button("✈️")
 
-        st.markdown("</div>", unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
 
-        # フォームが送信された場合のみ文字列を返す（未送信時は None）
+        # フォームが送信された場合のみ文字列を返（未送信時は None）
         if submitted and user_input:
-            return user_input, response_container
-        return None, response_container
+            return user_input, response_container, conversation_container
+        return None, response_container, conversation_container
 
 
 def display_app_title():

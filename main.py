@@ -76,7 +76,7 @@ if not "initialized" in st.session_state:
 # タイトル＋左右カラム構成の画面を表示
 # 右カラム内の入力欄を表示し、その入力値と右カラム上部の一時表示用コンテナを受け取る
 try:
-    chat_message, response_container = cn.display_main_layout()
+    chat_message, response_container, conversation_container = cn.display_main_layout()
 except Exception as e:
     # エラーログの出力
     logger.error(f"{ct.CONVERSATION_LOG_ERROR_MESSAGE}\n{e}")
@@ -89,6 +89,15 @@ except Exception as e:
 ############################################################
 # 7. チャット送信時の処理
 ############################################################
+# 初期表示: 会話ログを会話用コンテナに描画（ここで最新のセッションを表示）
+try:
+    # 描画は conversation_container 内で行う
+    with conversation_container:
+        cn.display_conversation_log()
+except Exception:
+    # フォールバック: 直接呼ぶ
+    cn.display_conversation_log()
+
 if chat_message:
     # ==========================================
     # 7-1. ユーザーメッセージのログ保存（まず追加して画面に即時反映）
@@ -163,12 +172,12 @@ if chat_message:
     # - 追加後に再描画して右カラムの会話ログに反映させる
     # ==========================================
     st.session_state.messages.append({"role": "assistant", "content": content})
-    # 可能であれば即時再描画を試みる（古い/新しい Streamlit で属性が無い場合に備える）
+    # 生成後は conversation_container に最新の会話ログを再描画して即時反映する
     try:
-        if hasattr(st, "experimental_rerun"):
-            st.experimental_rerun()
+        with conversation_container:
+            cn.display_conversation_log()
     except Exception:
-        # rerun が利用できない環境では何もしない（次のユーザ操作で再描画されます）
-        pass
+        # フォールバック
+        cn.display_conversation_log()
 
 
