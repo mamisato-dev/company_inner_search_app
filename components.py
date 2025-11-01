@@ -45,133 +45,92 @@ def display_main_layout():
 
     # ======== CSSでデザイン調整 ========
     st.markdown(
-        """
-        <style>
-        /* 🌐 ページ全体のレイアウト幅調整 */
-        .block-container {
-            max-width: 100% !important;
-            padding: 0;
-        }
+    """
+    <style>
+    /* 🌐 ページ全体のレイアウト幅調整 */
+    .block-container {
+        max-width: 100% !important;
+        padding: 0;
+    }
 
-        /* ✅ 左カラムを固定表示にしてスクロールしても残る */
-        /* Use the inner wrapper #left-col to reliably fix position across Streamlit versions */
-        #left-col {
-            position: fixed;
-            /* ヘッダーの高さに依存せず、安全に見切れを防ぐため padding-top を使う（top は 0 に） */
-            top: 0;
-            left: 0;
-            width: 25%; /* 左カラムの幅 */
-            /* ヘッダー分を差し引いた高さにして内部でスクロールさせる */
-            padding-top: 4.5rem; /* ヘッダー分の余白を確保 */
-            height: calc(100vh - 4.5rem);
-            background-color: #e0e0e0 !important;
-            padding: 2rem 1.5rem !important;
-            border-right: 2px solid #cccccc;
-            overflow-y: auto;
-            z-index: 1001; /* 高めにして右側要素の重なりから守る */
-            pointer-events: auto;
-        }
+    /* ✅ 左カラムを sticky 固定に変更 */
+    #left-col {
+        position: sticky;
+        top: 0;
+        background-color: #e0e0e0 !important;
+        padding: 2rem 1.5rem !important;
+        border-right: 2px solid #cccccc;
+        z-index: 10;
+        height: auto !important;
+        overflow-y: auto;
+    }
 
-        /* ✅ 右カラムは左カラム分だけ右に寄せ、右カラム内部をスクロール可能にする */
-        [data-testid="column"]:last-of-type {
-            margin-left: 27%; /* 左カラムの幅より少し広め */
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-start;
-            align-items: center;
-            text-align: center;
-            padding: 2rem 3rem !important;
-            width: 73%;
-            /* 右カラム自体をビューポート高さに合わせ、内部でスクロール */
-            height: calc(100vh - 3.5rem);
-            overflow-y: auto;
-        }
+    /* ✅ 右カラム（タイトル見切れ防止＆中央寄せ） */
+    [data-testid="column"]:last-of-type {
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        align-items: center;
+        text-align: center;
+        padding: 2rem 3rem !important;
+        background: transparent !important;
+        width: 100%;
+    }
 
-        /* ✅ チャットエリア（右カラム内で中央配置） */
-        .chat-area {
-            width: 85%;
-            max-width: 950px;
-            text-align: left;
-            /* 上に余白を取りつつ左右中央寄せにする */
-            margin: 1rem auto 0 auto;
-        }
+    /* ✅ チャットエリア（右カラム内で中央配置） */
+    .chat-area {
+        width: 85%;
+        max-width: 950px;
+        text-align: left;
+        margin: 1rem auto 0 auto;
+    }
 
-        /* ✅ 入力欄の重複エラー対策と中央配置 */
-        section[data-testid="stChatInput"] {
-            max-width: 75%;
-            margin: 2rem auto 0 auto;
-            position: relative;
-            z-index: 5;
-        }
+    /* ✅ 入力欄と送信ボタン（右カラム下部） */
+    .input-area {
+        position: sticky;
+        bottom: 1rem;
+        display: flex;
+        justify-content: center;
+        z-index: 20;
+        background: #ffffff;
+        padding: 0.8rem 1rem;
+        border-radius: 12px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    }
 
-        /* ✅ 右カラム下部に固定された入力エリア */
-        .chat-area .input-area {
-            position: sticky;
-            bottom: 1.5rem;
-            display: flex;
-            justify-content: center;
-            z-index: 20;
-            pointer-events: auto;
-        }
+    .input-box {
+        display: flex;
+        gap: 0.5rem;
+        width: 90%;
+        max-width: 900px;
+    }
 
-        /* 入力ボックス全体を相対配置にしてボタンを内部に重ねる */
-        .chat-area .input-box {
-            width: 85%;
-            max-width: 950px;
-            display: flex;
-            gap: 0.5rem;
-            align-items: center;
-            background: transparent;
-            position: relative; /* ここが重要 */
-        }
+    /* テキスト入力欄のスタイル */
+    .stTextInput input {
+        border-radius: 12px;
+        padding: 0.8rem 1rem;
+        border: 1px solid #ccc;
+        width: 100%;
+    }
 
-        /* テキスト入力を幅いっぱいにする。右側にボタン分の余地を確保 */
-        .chat-area .stTextInput input {
-            width: 100% !important;
-            padding-right: 56px !important; /* 送信アイコン分の余白 */
-        }
+    /* ✅ 「送信」ボタンをカスタマイズ（角丸＋グリーン） */
+    .stButton>button {
+        background-color: #4CAF50 !important;
+        color: white !important;
+        border: none !important;
+        border-radius: 8px !important;
+        padding: 0.6rem 1.2rem !important;
+        font-weight: bold !important;
+        cursor: pointer !important;
+    }
 
-        /* 送信ボタン（紙飛行機）を入力欄の内部に重ねる（absolute） */
-        .chat-area .stButton {
-            position: absolute;
-            right: 6px;
-            top: 50%;
-            transform: translateY(-50%);
-            height: 40px;
-            width: 40px;
-            padding: 0;
-            z-index: 30;
-            background: transparent;
-            box-shadow: none;
-        }
-
-        /* 実際のボタン要素にスタイルを適用 */
-        .chat-area .stButton > button {
-            height: 40px;
-            width: 40px;
-            padding: 0;
-            border-radius: 999px;
-            font-size: 18px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        /* ✅ スクロールバーのデザイン（グレーに） */
-        [data-testid="column"]:first-of-type::-webkit-scrollbar {
-            width: 6px;
-        }
-        [data-testid="column"]:first-of-type::-webkit-scrollbar-thumb {
-            background-color: #bdbdbd;
-            border-radius: 10px;
-        }
-        [data-testid="column"]:first-of-type::-webkit-scrollbar-track {
-            background: #e0e0e0;
-        }
-        </style>
-        """,
-        unsafe_allow_html=True
-    )
+    .stButton>button:hover {
+        background-color: #45a049 !important;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 
     # ======== 左右カラム構成 ========
     left_col, right_col = st.columns([1.2, 3], gap="medium")
@@ -183,11 +142,12 @@ def display_main_layout():
         st.markdown('<div id="left-col">', unsafe_allow_html=True)
 
         st.markdown("### 利用目的")
-        st.session_state.mode = st.radio(
+        st.radio(
             "利用目的を選択してください",
             [ct.ANSWER_MODE_1, ct.ANSWER_MODE_2],
             index=0,
-            label_visibility="collapsed"
+            label_visibility="collapsed",
+            key="mode"
         )
         st.markdown("----")
         # 「社内文書検索」の機能説明
@@ -263,7 +223,7 @@ def display_select_mode():
     回答モードのラジオボタンを表示
     """
     # 回答モードを選択する用のラジオボタンを表示
-    col1, col2 = st.columns([100, 1])
+    col1, _ = st.columns([4, 1])
     with col1:
         # 「label_visibility="collapsed"」とすることで、ラジオボタンを非表示にする
         st.session_state.mode = st.radio(
@@ -532,28 +492,11 @@ def display_search_llm_response(llm_response):
             for sub_choice in sub_choices:
                 # 参照元のありかに応じて、適したアイコンを取得
                 icon = utils.get_source_icon(sub_choice['source'])
-                # ページ番号が取得できない場合のための分岐処理
+                # ページ番号が取得できる場合はページ番号付きで表示、なければファイルパスのみ表示
                 if "page_number" in sub_choice:
-                    # 「サブドキュメントのファイルパス」と「ページ番号」を表示
-                    st.info(f"{sub_choice['source']}", icon=icon)
-                else:
-                # 参照元のありかに応じて、適したアイコンを取得
-                    icon = utils.get_source_icon(sub_choice['source'])
-                    st.info(f"{sub_choice['source']}", icon=icon)
-                # ページ番号が取得できない場合のための分岐処理
-                if "page_number" in sub_choice:
-                    # 「サブドキュメントのファイルパス」と「ページ番号」を表示
-                    st.info(f"{sub_choice['source']}", icon=icon)
+                    st.info(f"{sub_choice['source']} (ページNo.{sub_choice['page_number']})", icon=icon)
                 else:
                     st.info(f"{sub_choice['source']}", icon=icon)
-        # サブドキュメントの情報は、取得できた場合にのみ追加
-        if sub_choices:
-            content["sub_message"] = sub_message
-            content["sub_choices"] = sub_choices
-    
-    # LLMからのレスポンスに、ユーザー入力値と関連性の高いドキュメント情報が入って「いない」場合
-    else:
-        # 関連ドキュメントが取得できなかった場合のメッセージ表示
         st.markdown(ct.NO_DOC_MATCH_MESSAGE)
 
         # 表示用の会話ログに格納するためのデータを用意
