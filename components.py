@@ -57,17 +57,19 @@ def display_main_layout():
         /* Use the inner wrapper #left-col to reliably fix position across Streamlit versions */
         #left-col {
             position: fixed;
-            /* Streamlit のヘッダー分だけ下にずらして上部の見切れを防止 */
-            top: 4rem;
+            /* ヘッダーの高さに依存せず、安全に見切れを防ぐため padding-top を使う（top は 0 に） */
+            top: 0;
             left: 0;
             width: 25%; /* 左カラムの幅 */
             /* ヘッダー分を差し引いた高さにして内部でスクロールさせる */
-            height: calc(100vh - 4rem);
+            padding-top: 4.5rem; /* ヘッダー分の余白を確保 */
+            height: calc(100vh - 4.5rem);
             background-color: #e0e0e0 !important;
             padding: 2rem 1.5rem !important;
             border-right: 2px solid #cccccc;
             overflow-y: auto;
-            z-index: 10;
+            z-index: 1001; /* 高めにして右側要素の重なりから守る */
+            pointer-events: auto;
         }
 
         /* ✅ 右カラムは左カラム分だけ右に寄せ、右カラム内部をスクロール可能にする */
