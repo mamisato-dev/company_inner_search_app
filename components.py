@@ -44,17 +44,81 @@ def display_main_layout():
     """
 
     # ======== CSSでデザイン調整 ========
+    st.markdown("""
+        <style>
+        /* ページ全体の幅と上下余白調整（見切れ防止） */
+        .block-container {
+            max-width: 95% !important;
+            padding: 1.5rem 2rem 2rem 2rem;
+            margin: 0 auto;
+        }
+
+        /* 左右カラム比率 (1:3) */
+        [data-testid="column"]:first-of-type {
+            flex: 1;
+        }
+        [data-testid="column"]:last-of-type {
+            flex: 3;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* 入力欄デザイン */
+        .stTextInput > div {
+            position: relative;
+        }
+        .stTextInput input {
+            width: 100%;
+            border: 1px solid #ccc;
+            border-radius: 20px;
+            padding: 10px 45px 10px 12px;
+            font-size: 14px;
+        }
+
+        /* Streamlit送信ボタンを➤ボタン化 */
+        button[kind="secondaryFormSubmit"] {
+            position: absolute !important;
+            right: 10px !important;
+            top: 50% !important;
+            transform: translateY(-50%) !important;
+            background-color: #4CAF50 !important;
+            color: white !important;
+            border: none !important;
+            border-radius: 50% !important;
+            width: 36px !important;
+            height: 36px !important;
+            font-size: 18px !important;
+            cursor: pointer !important;
+            transition: background 0.3s ease !important;
+        }
+        button[kind="secondaryFormSubmit"]:hover {
+            background-color: #45a049 !important;
+        }
+        /* テキスト非表示 */
+        button[kind="secondaryFormSubmit"] > div[data-testid="stMarkdownContainer"] {
+            display: none !important;
+        }
+        /* デフォルトのアイコンも削除して➤を挿入 */
+        button[kind="secondaryFormSubmit"] svg {
+            display: none !important;
+        }
+        button[kind="secondaryFormSubmit"]::after {
+            content: "➤" !important;
+            font-weight: bold !important;
+        }
+        </style>
+    """, unsafe_allow_html=True)
 
     # ======== 左右カラム構成 ========
-    left_col, right_col = st.columns([1.2, 3], gap="medium")
+    left_col, right_col = st.columns([1, 3], gap="medium")
 
-    # ==============
-    # 左カラム: 利用目的設定欄
-    # ==============
+    # ============== 左カラム ==============
     with left_col:
         st.markdown('<div id="left-col">', unsafe_allow_html=True)
-
         st.markdown("### 利用目的")
+
         st.radio(
             "利用目的を選択してください",
             [ct.ANSWER_MODE_1, ct.ANSWER_MODE_2],
@@ -62,73 +126,46 @@ def display_main_layout():
             label_visibility="collapsed",
             key="mode"
         )
-        st.markdown("----")
-        # 「社内文書検索」の機能説明
-        st.markdown("**【「社内文書検索」を選択した場合】**")
-        # 「st.info()」を使うと青枠で表示される
-        st.info("入力内容と関連性が高い社内文書のありかを検索できます。")
-        # 「st.code()」を使うとコードブロックの装飾で表示される
-        # 「wrap_lines=True」で折り返し設定、「language=None」で非装飾とする
-        st.code("【入力例】\n社員の育成方針に関するMTGの議事録", wrap_lines=True, language=None)
 
-        # 「社内問い合わせ」の機能説明
+        st.markdown("----")
+        st.markdown("**【「社内文書検索」を選択した場合】**")
+        st.info("入力内容と関連性が高い社内文書のありかを検索できます。")
+        st.code("【入力例】\n社員の育成方針に関するMTGの議事録", wrap_lines=True)
         st.markdown("**【「社内問い合わせ」を選択した場合】**")
         st.info("質問・要望に対して、社内文書の情報をもとに回答を得られます。")
-        st.code("【入力例】\n人事部に所属している従業員情報を一覧化して", wrap_lines=True, language=None)
+        st.code("【入力例】\n人事部に所属している従業員情報を一覧化して", wrap_lines=True)
         st.markdown("</div>", unsafe_allow_html=True)
 
-    # ==============
-    # 右カラム: メイン表示部分
-    # ==============
+    # ============== 右カラム ==============
     with right_col:
         st.markdown('<div id="right-col">', unsafe_allow_html=True)
-        # 🟩チャット領域全体をラップ
         st.markdown('<div class="chat-area">', unsafe_allow_html=True)
 
-        # --- 外部関数が存在する場合のみ実行 ---
-        if "display_app_title" in globals():
-            display_app_title()
-        else:
-            st.warning("⚠️ display_app_title() が未定義です。")
-
+        display_app_title()
         if "display_initial_ai_message" in globals():
             display_initial_ai_message()
 
-        # 会話ログは呼び出し元で制御するため、ここではコンテナを用意するのみとする
+        # 会話ログコンテナ
         conversation_container = st.container()
 
         st.markdown("</div>", unsafe_allow_html=True)
 
-        # 🟩 ③ チャット入力欄（右カラム内に配置）
-        # 右カラムの入力欄の「上」に一時表示用のコンテナを用意する
+        # チャット入力欄
         response_container = st.container()
-
-        # 入力欄は右カラム下部に固定（sticky）で表示するため、
-        # markup で wrapper を作ってからフォームを配置する
-        st.markdown('<div class="input-area">', unsafe_allow_html=True)
-        st.markdown('<div class="input-box">', unsafe_allow_html=True)
-
-        with st.form(key="chat_form", clear_on_submit=True) as chat_form:
-            cols = st.columns([9, 1], gap="small")
-            with cols[0]:
-                user_input = st.text_input("", placeholder=ct.CHAT_INPUT_HELPER_TEXT, key="main_chat_text")
-            with cols[1]:
-                st.markdown("""
-                    <style>
-                    button[kind="secondaryFormSubmit"] svg { display: none !important; }
-                    button[kind="secondaryFormSubmit"]::after { content: "送信"; }
-                    </style>
-                """, unsafe_allow_html=True)
+        with st.form(key="chat_form", clear_on_submit=True):
+            user_input = st.text_input(
+                "",
+                placeholder=ct.CHAT_INPUT_HELPER_TEXT,
+                key="main_chat_text"
+            )
             submitted = st.form_submit_button("送信")
 
-        st.markdown('</div>', unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)
-
-        # フォームが送信された場合のみ文字列を返（未送信時は None）
-        if submitted:
+        # フォーム送信時
+        if submitted and user_input.strip():
             return user_input, response_container, conversation_container
         return None, response_container, conversation_container
 
+    
 def display_app_title():
     """
     アプリのタイトルを表示する関数
@@ -141,7 +178,6 @@ def display_app_title():
     -------
     なし
     """
-    st.markdown(f"## {ct.APP_NAME}")
     st.markdown(f"## {ct.APP_NAME}")
 
 def display_select_mode():
