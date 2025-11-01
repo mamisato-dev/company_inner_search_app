@@ -145,26 +145,14 @@ if chat_message:
     # ここでは右カラム上部の一時表示コンテナ（response_container）を使って
     # LLM応答を右カラム内の入力欄の上に表示します。response_container がない場合は
     # 既存の st.chat_message を使って代替表示します。
-    try:
-        if response_container is not None:
-            with response_container:
-                # 一時表示も chat_message でラップしてアカウントアイコン／吹き出し背景を付与する
-                with st.chat_message("assistant"):
-                    if st.session_state.mode == ct.ANSWER_MODE_1:
-                        content = cn.display_search_llm_response(llm_response)
-                    elif st.session_state.mode == ct.ANSWER_MODE_2:
-                        content = cn.display_contact_llm_response(llm_response)
-        else:
-            # フォールバック
-            if st.session_state.mode == ct.ANSWER_MODE_1:
-                content = cn.display_search_llm_response(llm_response)
-            elif st.session_state.mode == ct.ANSWER_MODE_2:
-                content = cn.display_contact_llm_response(llm_response)
-        logger.info({"message": content, "application_mode": st.session_state.mode})
-    except Exception as e:
-        logger.error(f"{ct.DISP_ANSWER_ERROR_MESSAGE}\n{e}")
-        st.error(utils.build_error_message(ct.DISP_ANSWER_ERROR_MESSAGE), icon=ct.ERROR_ICON)
-        st.stop()
+    # prepare content (no rendering)
+    if st.session_state.mode == ct.ANSWER_MODE_1:
+        content = cn.prepare_search_content(llm_response)
+    else:
+        content = cn.prepare_contact_content(llm_response)
+
+    # 一時表示は不要（spinner を表示していたので回答は会話ログにのみ表示する）
+    logger.info({"message": content, "application_mode": st.session_state.mode})
 
     # ==========================================
     # 7-4. 会話ログへの追加（回答をセッションに保存）

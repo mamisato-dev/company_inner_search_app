@@ -54,14 +54,15 @@ def display_main_layout():
         }
 
         /* ✅ 左カラムを固定表示にしてスクロールしても残る */
-        [data-testid="column"]:first-of-type {
+        /* Use the inner wrapper #left-col to reliably fix position across Streamlit versions */
+        #left-col {
             position: fixed;
             /* Streamlit のヘッダー分だけ下にずらして上部の見切れを防止 */
-            top: 3.5rem;
+            top: 4rem;
             left: 0;
             width: 25%; /* 左カラムの幅 */
             /* ヘッダー分を差し引いた高さにして内部でスクロールさせる */
-            height: calc(100vh - 3.5rem);
+            height: calc(100vh - 4rem);
             background-color: #e0e0e0 !important;
             padding: 2rem 1.5rem !important;
             border-right: 2px solid #cccccc;
@@ -111,6 +112,7 @@ def display_main_layout():
             pointer-events: auto;
         }
 
+        /* 入力ボックス全体を相対配置にしてボタンを内部に重ねる */
         .chat-area .input-box {
             width: 85%;
             max-width: 950px;
@@ -118,20 +120,39 @@ def display_main_layout():
             gap: 0.5rem;
             align-items: center;
             background: transparent;
+            position: relative; /* ここが重要 */
         }
 
-        /* テキスト入力を幅いっぱいにする */
+        /* テキスト入力を幅いっぱいにする。右側にボタン分の余地を確保 */
         .chat-area .stTextInput input {
             width: 100% !important;
+            padding-right: 56px !important; /* 送信アイコン分の余白 */
         }
 
-        /* 送信ボタン（紙飛行機）をコンパクトに見せる */
+        /* 送信ボタン（紙飛行機）を入力欄の内部に重ねる（absolute） */
+        .chat-area .stButton {
+            position: absolute;
+            right: 6px;
+            top: 50%;
+            transform: translateY(-50%);
+            height: 40px;
+            width: 40px;
+            padding: 0;
+            z-index: 30;
+            background: transparent;
+            box-shadow: none;
+        }
+
+        /* 実際のボタン要素にスタイルを適用 */
         .chat-area .stButton > button {
-            min-width: 48px;
-            height: 48px;
-            padding: 0 0.5rem;
-            border-radius: 8px;
+            height: 40px;
+            width: 40px;
+            padding: 0;
+            border-radius: 999px;
             font-size: 18px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
         }
 
         /* ✅ スクロールバーのデザイン（グレーに） */
@@ -333,6 +354,87 @@ def display_conversation_log():
                                 st.info(f"{source} (ページNo.{file_info['page_number']})", icon=icon)
                             else:
                                 st.info(source, icon=icon)
+
+
+def prepare_search_content(llm_response):
+    """
+    LLMの検索モードのレスポンスから、表示用の content 辞書を作成して返す（描画はしない）。
+    """
+    content = {
+        "mode": ct.ANSWER_MODE_1,
+        "answer": llm_response.get("answer", ""),
+        "main_message": "入力内容に関する情報は、以下のファイルに含まれている可能性があります。",
+    }
+
+    # main file
+    if llm_response.get("context"):
+        main_file_path = llm_response["context"][0].metadata.get("source")
+        content["main_file_path"] = main_file_path
+        # page normalization (0-based -> 1-based when possible)
+        raw = llm_response["context"][0].metadata.get("page")
+        if raw is not None:
+            try:
+                content["main_page_number"] = int(raw) + 1
+            except Exception:
+                content["main_page_number"] = raw
+
+    # sub choices
+    sub_choices = []
+    duplicate_check_list = []
+    for document in llm_response.get("context", [])[1:]:
+        sub_file_path = document.metadata.get("source")
+        if sub_file_path == content.get("main_file_path"):
+            continue
+        if sub_file_path in duplicate_check_list:
+            continue
+        duplicate_check_list.append(sub_file_path)
+        if "page" in document.metadata:
+            try:
+                sub_page = int(document.metadata.get("page")) + 1
+            except Exception:
+                sub_page = document.metadata.get("page")
+            sub_choices.append({"source": sub_file_path, "page_number": sub_page})
+        else:
+            sub_choices.append({"source": sub_file_path})
+
+    if sub_choices:
+        content["sub_message"] = "その他、ファイルありかの候補を提示します。"
+        content["sub_choices"] = sub_choices
+
+    return content
+
+
+def prepare_contact_content(llm_response):
+    """
+    LLMの問い合わせモードのレスポンスから、表示用の content 辞書を作成して返す（描画はしない）。
+    """
+    content = {
+        "mode": ct.ANSWER_MODE_2,
+        "answer": llm_response.get("answer", ""),
+    }
+
+    file_info_list = []
+    file_path_list = []
+    for document in llm_response.get("context", []):
+        file_path = document.metadata.get("source")
+        if file_path in file_path_list:
+            continue
+        page_raw = document.metadata.get("page") if document.metadata else None
+        if page_raw is not None:
+            try:
+                page = int(page_raw) + 1
+            except Exception:
+                page = page_raw
+            file_info_list.append({"source": file_path, "page_number": page})
+        else:
+            file_info_list.append({"source": file_path})
+        file_path_list.append(file_path)
+
+    if llm_response.get("answer") != ct.INQUIRY_NO_MATCH_ANSWER:
+        content["message"] = "情報源"
+        content["file_info_list"] = file_info_list
+
+    return content
 
 
 def display_search_llm_response(llm_response):
