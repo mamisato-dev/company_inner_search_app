@@ -11,6 +11,7 @@ from logging.handlers import TimedRotatingFileHandler
 from uuid import uuid4
 import sys
 import unicodedata
+import time
 from dotenv import load_dotenv
 import streamlit as st
 from docx import Document
@@ -36,13 +37,13 @@ def initialize():
     """
     画面読み込み時に実行する初期化処理
     """
-    print("initialize(): start")   # ← ここ追加
+    logging.getLogger(ct.LOGGER_NAME).info("initialize(): start")
 
     # 初期化データの用意
     initialize_session_state()
     # ログ出力用にセッションIDを生成
     initialize_session_id()
-    # ログ出力の設定
+    # ログ出力の設定（セッションID生成後に必ず呼び出すこと）
     initialize_logger()
     # RAGのRetrieverを作成
     initialize_retriever()
@@ -77,10 +78,10 @@ def initialize_logger():
     # - 「lineno」: ログが出力されたファイルの行番号
     # - 「funcName」: ログが出力された関数名
     # - 「session_id」: セッションID（誰のアプリ操作か分かるように）
-    # - 「message」: ログメッセージ
     formatter = logging.Formatter(
-        f"[%(levelname)s] %(asctime)s line %(lineno)s, in %(funcName)s, session_id={st.session_state.session_id}: %(message)s"
+        f"[%(levelname)s] %(asctime)s line %(lineno)s, in %(funcName)s, session_id={st.session_state.get('session_id', 'unknown')}: %(message)s"
     )
+    
 
     # 定義したフォーマッターの適用
     log_handler.setFormatter(formatter)
@@ -139,7 +140,7 @@ def initialize_retriever():
     db = Chroma.from_documents(splitted_docs, embedding=embeddings)
 
     # ベクターストアを検索するRetrieverの作成
-    st.session_state.retriever = db.as_retriever(search_kwargs={"k": 5})
+    st.session_state.retriever = db.as_retriever(search_kwargs={"k": 50})
 
 
 def initialize_session_state():
@@ -212,7 +213,7 @@ def file_load(path, docs_all):
         docs_all: データソースを格納する用のリスト
     """
     # ファイルの拡張子を取得
-    file_extension = os.path.splitext(path)[1]
+    file_extension = os.path.splitext(path)[1].lower()
     # ファイル名（拡張子を含む）を取得
     file_name = os.path.basename(path)
 
@@ -238,11 +239,9 @@ def adjust_string(s):
     if type(s) is not str:
         return s
 
-    # OSがWindowsの場合、Unicode正規化と、cp932（Windows用の文字コード）で表現できない文字を除去
+    # まず全OSでUnicode正規化を適用
+    s = unicodedata.normalize('NFC', s)
+    # OSがWindowsの場合のみ、cp932（Windows用の文字コード）で表現できない文字を除去
     if sys.platform.startswith("win"):
-        s = unicodedata.normalize('NFC', s)
         s = s.encode("cp932", "ignore").decode("cp932")
-        return s
-    
-    # OSがWindows以外の場合はそのまま返す
     return s

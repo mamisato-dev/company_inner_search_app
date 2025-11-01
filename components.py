@@ -12,53 +12,105 @@ import constants as ct
 
 
 ############################################################
-# 関数定義
+# 共通サブ関数定義
 ############################################################
-### レイアウト変更修正 ###
+def show_mode_info(title: str, description: str, example: str):
+    """
+    モード別の説明表示を共通化した関数
+
+    Parameters
+    ----------
+    title : str
+        モード名（例：社内文書検索）
+    description : str
+        モードの概要説明
+    example : str
+        入力例を表示するサンプルテキスト
+    """
+    st.markdown(f"**「{title}」を選択中**")
+    st.info(description)
+    st.markdown(f"##### 💡入力例")
+    st.code(example, wrap_lines=True)
+
+
+############################################################
+# メインレイアウト構成関数
+############################################################
 def display_main_layout():
     """
-    アプリ全体のレイアウト構成（左カラム: モード設定, 右カラム: メイン画面）
+    アプリ全体のレイアウト構成
+    左カラム：モード設定
+    右カラム：メイン画面（チャット表示）
     """
 
     # ======== CSSでデザイン調整 ========
     st.markdown(
         """
         <style>
-        /* 全体の幅をウィンドウにフィット */
-        .block-container{
-            max-width: 100% !important; 
-            padding: 0 2rem 2rem 2rem;
+        /* 🌐 ページ全体のレイアウト幅調整 */
+        .block-container {
+            max-width: 100% !important;
+            padding: 0;
         }
 
-
-        /* 左カラム（背景を薄いグレーに）*/
+        /* ✅ 左カラムを固定表示にしてスクロールしても残る */
         [data-testid="column"]:first-of-type {
-            background-color: #f5f5f5;
-            padding: 2rem 1rem 2rem 1rem;
-            border-radius: 8px;
+            position: fixed;
+            /* Streamlit のヘッダー分だけ下にずらして上部の見切れを防止 */
+            top: 3.5rem;
+            left: 0;
+            width: 25%; /* 左カラムの幅 */
+            /* ヘッダー分を差し引いた高さにして内部でスクロールさせる */
+            height: calc(100vh - 3.5rem);
+            background-color: #e0e0e0 !important;
+            padding: 2rem 1.5rem !important;
+            border-right: 2px solid #cccccc;
+            overflow-y: auto;
+            z-index: 10;
         }
 
-        /* 右カラム（中央寄せ）*/
+        /* ✅ 右カラムは左カラム分だけ右に寄せ、右カラム内部をスクロール可能にする */
         [data-testid="column"]:last-of-type {
+            margin-left: 27%; /* 左カラムの幅より少し広め */
             display: flex;
             flex-direction: column;
-            justify-content: center;
+            justify-content: flex-start;
             align-items: center;
+            text-align: center;
+            padding: 2rem 3rem !important;
+            width: 73%;
+            /* 右カラム自体をビューポート高さに合わせ、内部でスクロール */
+            height: calc(100vh - 3.5rem);
+            overflow-y: auto;
         }
 
-        /* 右カラム（チャット入力欄） */
-        section[data-testid="stChatInput"]{
-            max-width: 70%; 
-            margin-left: auto; 
-            margin-right: 2rem; 
+        /* ✅ チャットエリア（右カラム内で中央配置） */
+        .chat-area {
+            width: 85%;
+            max-width: 950px;
+            text-align: left;
+            /* 上に余白を取りつつ左右中央寄せにする */
+            margin: 1rem auto 0 auto;
         }
 
+        /* ✅ 入力欄の重複エラー対策と中央配置 */
+        section[data-testid="stChatInput"] {
+            max-width: 75%;
+            margin: 2rem auto 0 auto;
+            position: relative;
+            z-index: 5;
+        }
 
-        /* 情報ボックス背景色変更 */
-        div[data-testid="stMarkdownContainer"] pre{
-            background-color: #eef6ff !important; /* 薄い水色*/
-            border-radius: 6px; 
-            padding: 0.8rem;
+        /* ✅ スクロールバーのデザイン（グレーに） */
+        [data-testid="column"]:first-of-type::-webkit-scrollbar {
+            width: 6px;
+        }
+        [data-testid="column"]:first-of-type::-webkit-scrollbar-thumb {
+            background-color: #bdbdbd;
+            border-radius: 10px;
+        }
+        [data-testid="column"]:first-of-type::-webkit-scrollbar-track {
+            background: #e0e0e0;
         }
         </style>
         """,
@@ -68,37 +120,73 @@ def display_main_layout():
     # ======== 左右カラム構成 ========
     left_col, right_col = st.columns([1.2, 3], gap="medium")
 
-
     # ==============
     # 左カラム: 利用目的設定欄
     # ==============
-    with left_col: 
+    with left_col:
+        st.markdown('<div id="left-col">', unsafe_allow_html=True)
+
         st.markdown("### 利用目的")
         st.session_state.mode = st.radio(
-            "利用目的を選択してください", 
-            [ct.ANSWER_MODE_1, ct.ANSWER_MODE_2], 
-            index = 0,
-            label_visibility = "collapsed"
+            "利用目的を選択してください",
+            [ct.ANSWER_MODE_1, ct.ANSWER_MODE_2],
+            index=0,
+            label_visibility="collapsed"
         )
+        st.markdown("----")
+        # 「社内文書検索」の機能説明
+        st.markdown("**【「社内文書検索」を選択した場合】**")
+        # 「st.info()」を使うと青枠で表示される
+        st.info("入力内容と関連性が高い社内文書のありかを検索できます。")
+        # 「st.code()」を使うとコードブロックの装飾で表示される
+        # 「wrap_lines=True」で折り返し設定、「language=None」で非装飾とする
+        st.code("【入力例】\n社員の育成方針に関するMTGの議事録", wrap_lines=True, language=None)
 
-        st.markdown("---")
-        # モード別の補足説明
-        if st.session_state.mode == ct.ANSWER_MODE_1:
-            st.markdown("**「社内文書検索」を選択中**")
-            st.info("入力内容に関する社内文書のありかを検索")
-            st.code("例: 社員の教育方針に関するMTGの議事録", wrap_lines=True, language=None)
-        else:   
-            st.markdown("**「社内問い合わせ」を選択中**")
-            st.info("質問内容に関連する社内文書をもとに回答します。")
-            st.code("例: 人事部に所属している従業員数情報を一覧化して", wrap_lines=True, language=None)
+        # 「社内問い合わせ」の機能説明
+        st.markdown("**【「社内問い合わせ」を選択した場合】**")
+        st.info("質問・要望に対して、社内文書の情報をもとに回答を得られます。")
+        st.code("【入力例】\n人事部に所属している従業員情報を一覧化して", wrap_lines=True, language=None)
+        st.markdown("</div>", unsafe_allow_html=True)
+
     # ==============
     # 右カラム: メイン表示部分
     # ==============
-    with right_col: 
-        display_app_title()
-        display_initial_ai_message()
-        display_conversation_log()
-        
+    with right_col:
+        st.markdown('<div id="right-col">', unsafe_allow_html=True)
+        # 🟩チャット領域全体をラップ
+        st.markdown('<div class="chat-area">', unsafe_allow_html=True)
+
+        # --- 外部関数が存在する場合のみ実行 ---
+        if "display_app_title" in globals():
+            display_app_title()
+        else:
+            st.warning("⚠️ display_app_title() が未定義です。")
+
+        if "display_initial_ai_message" in globals():
+            display_initial_ai_message()
+
+        if "display_conversation_log" in globals():
+            display_conversation_log()
+
+        st.markdown("</div>", unsafe_allow_html=True)
+
+        # 🟩 ③ チャット入力欄（右カラム内に配置）
+        # Streamlit の組み込みチャット入力はページ下部に常に表示されることがあるため、
+        # ここではフォーム（st.form + st.text_input）を使って右カラム内にのみ入力欄を配置します。
+        # 右カラムの入力欄の「上」に一時表示用のコンテナを用意する
+        response_container = st.container()
+
+        with st.form(key="chat_form", clear_on_submit=True):
+            user_input = st.text_input("", placeholder=ct.CHAT_INPUT_HELPER_TEXT, key="main_chat_text")
+            submitted = st.form_submit_button("送信")
+
+        st.markdown("</div>", unsafe_allow_html=True)
+
+        # フォームが送信された場合のみ文字列を返す（未送信時は None）
+        if submitted and user_input:
+            return user_input, response_container
+        return None, response_container
+
 
 def display_app_title():
     """
@@ -127,20 +215,10 @@ def display_initial_ai_message():
     """
     with st.chat_message("assistant"):
         # 「st.success()」とすると緑枠で表示される
-        st.markdown("こんにちは。私は社内文書の情報をもとに回答する生成AIチャットボットです。上記で利用目的を選択し、画面下部のチャット欄からメッセージを送信してください。")
+        st.success("こんにちは。私は社内文書の情報をもとに回答する生成AIチャットボットです。上記で利用目的を選択し、画面下部のチャット欄からメッセージを送信してください。")
 
-        # 「社内文書検索」の機能説明
-        st.markdown("**【「社内文書検索」を選択した場合】**")
-        # 「st.info()」を使うと青枠で表示される
-        st.info("入力内容と関連性が高い社内文書のありかを検索できます。")
-        # 「st.code()」を使うとコードブロックの装飾で表示される
-        # 「wrap_lines=True」で折り返し設定、「language=None」で非装飾とする
-        st.code("【入力例】\n社員の育成方針に関するMTGの議事録", wrap_lines=True, language=None)
-
-        # 「社内問い合わせ」の機能説明
-        st.markdown("**【「社内問い合わせ」を選択した場合】**")
-        st.info("質問・要望に対して、社内文書の情報をもとに回答を得られます。")
-        st.code("【入力例】\n人事部に所属している従業員情報を一覧化して", wrap_lines=True, language=None)
+        # 「st.warning()」を使うと黄色枠で表示される
+        st.warning("⚠️具体的に入力したほうが期待通りの回答を得やすいです。")
 
 
 def display_conversation_log():
@@ -162,7 +240,7 @@ def display_conversation_log():
                 if message["content"]["mode"] == ct.ANSWER_MODE_1:
                     
                     # ファイルのありかの情報が取得できた場合（通常時）の表示処理
-                    if not "no_file_path_flg" in message["content"]:
+                    if "no_file_path_flg" not in message["content"]:
                         # ==========================================
                         # ユーザー入力値と最も関連性が高いメインドキュメントのありかを表示
                         # ==========================================
@@ -171,9 +249,9 @@ def display_conversation_log():
 
                         # 参照元のありかに応じて、適したアイコンを取得
                         icon = utils.get_source_icon(message['content']['main_file_path'])
-                        # 参照元ドキュメントのページ番号が取得できた場合にのみ、ページ番号を表示
-                        if "main_page_number" in message["content"]:
-                            st.success(f"{message['content']['main_file_path']}", icon=icon)
+                        # ページ番号があれば表示に含める
+                        if "main_page_number" in message['content']:
+                            st.success(f"{message['content']['main_file_path']} (ページNo.{message['content']['main_page_number']})", icon=icon)
                         else:
                             st.success(f"{message['content']['main_file_path']}", icon=icon)
                         
@@ -190,12 +268,9 @@ def display_conversation_log():
                                 icon = utils.get_source_icon(sub_choice['source'])
                                 # 参照元ドキュメントのページ番号が取得できた場合にのみ、ページ番号を表示
                                 if "page_number" in sub_choice:
-                                    st.info(f"{sub_choice['source']}", icon=icon)
+                                    st.info(f"{sub_choice['source']} (ページNo.{sub_choice['page_number']})", icon=icon)
                                 else:
                                     st.info(f"{sub_choice['source']}", icon=icon)
-                    # ファイルのありかの情報が取得できなかった場合、LLMからの回答のみ表示
-                    else:
-                        st.markdown(message["content"]["answer"])
                 
                 # 「社内問い合わせ」の場合の表示処理
                 else:
@@ -210,9 +285,13 @@ def display_conversation_log():
                         st.markdown(f"##### {message['content']['message']}")
                         # ドキュメントのありかを一覧表示
                         for file_info in message["content"]["file_info_list"]:
-                            # 参照元のありかに応じて、適したアイコンを取得
-                            icon = utils.get_source_icon(file_info)
-                            st.info(file_info, icon=icon)
+                            # file_info は辞書（source, optional page_number）
+                            source = file_info.get("source") if isinstance(file_info, dict) else str(file_info)
+                            icon = utils.get_source_icon(source)
+                            if isinstance(file_info, dict) and "page_number" in file_info:
+                                st.info(f"{source} (ページNo.{file_info['page_number']})", icon=icon)
+                            else:
+                                st.info(source, icon=icon)
 
 
 def display_search_llm_response(llm_response):
@@ -240,18 +319,25 @@ def display_search_llm_response(llm_response):
         
         # 参照元のありかに応じて、適したアイコンを取得
         icon = utils.get_source_icon(main_file_path)
-        # ページ番号が取得できた場合のみ、ページ番号を表示（ドキュメントによっては取得できない場合がある）
+        # content 作成（表示用データ）
+        content = {
+            "mode": ct.ANSWER_MODE_1,
+            "answer": llm_response.get("answer", ""),
+            "main_message": main_message,
+            "main_file_path": main_file_path,
+        }
+        # ページ番号が取得できた場合のみ、ページ番号を追加
         if "page" in llm_response["context"][0].metadata:
-            # ページ番号を取得
-            main_page_number = llm_response["context"][0].metadata["page"]
-            # 「メインドキュメントのファイルパス」と「ページ番号」を表示
-            st.success(f"{main_file_path}", icon=icon)
+            raw_page = llm_response["context"][0].metadata["page"]
+            try:
+                # 多くのローダーは0起点のページ番号を返すため表示時は+1する
+                main_page_number = int(raw_page) + 1
+            except Exception:
+                main_page_number = raw_page
+            content["main_page_number"] = main_page_number
+            st.success(f"{main_file_path} (ページNo.{main_page_number})", icon=icon)
         else:
-            # 「メインドキュメントのファイルパス」を表示
             st.success(f"{main_file_path}", icon=icon)
-
-        # ==========================================
-        # ユーザー入力値と関連性が高いサブドキュメントのありかを表示
         # ==========================================
         # メインドキュメント以外で、関連性が高いサブドキュメントを格納する用のリストを用意
         sub_choices = []
@@ -277,8 +363,11 @@ def display_search_llm_response(llm_response):
             
             # ページ番号が取得できない場合のための分岐処理
             if "page" in document.metadata:
-                # ページ番号を取得
-                sub_page_number = document.metadata["page"]
+                # ページ番号を取得（表示は +1 する）
+                try:
+                    sub_page_number = int(document.metadata["page"]) + 1
+                except Exception:
+                    sub_page_number = document.metadata["page"]
                 # 「サブドキュメントのファイルパス」と「ページ番号」の辞書を作成
                 sub_choice = {"source": sub_file_path, "page_number": sub_page_number}
             else:
@@ -303,23 +392,15 @@ def display_search_llm_response(llm_response):
                     # 「サブドキュメントのファイルパス」と「ページ番号」を表示
                     st.info(f"{sub_choice['source']}", icon=icon)
                 else:
-                    # 「サブドキュメントのファイルパス」を表示
+                # 参照元のありかに応じて、適したアイコンを取得
+                    icon = utils.get_source_icon(sub_choice['source'])
                     st.info(f"{sub_choice['source']}", icon=icon)
-        
-        # 表示用の会話ログに格納するためのデータを用意
-        # - 「mode」: モード（「社内文書検索」or「社内問い合わせ」）
-        # - 「main_message」: メインドキュメントの補足メッセージ
-        # - 「main_file_path」: メインドキュメントのファイルパス
-        # - 「main_page_number」: メインドキュメントのページ番号
-        # - 「sub_message」: サブドキュメントの補足メッセージ
-        # - 「sub_choices」: サブドキュメントの情報リスト
-        content = {}
-        content["mode"] = ct.ANSWER_MODE_1
-        content["main_message"] = main_message
-        content["main_file_path"] = main_file_path
-        # メインドキュメントのページ番号は、取得できた場合にのみ追加
-        if "page" in llm_response["context"][0].metadata:
-            content["main_page_number"] = main_page_number
+                # ページ番号が取得できない場合のための分岐処理
+                if "page_number" in sub_choice:
+                    # 「サブドキュメントのファイルパス」と「ページ番号」を表示
+                    st.info(f"{sub_choice['source']}", icon=icon)
+                else:
+                    st.info(f"{sub_choice['source']}", icon=icon)
         # サブドキュメントの情報は、取得できた場合にのみ追加
         if sub_choices:
             content["sub_message"] = sub_message
@@ -376,31 +457,25 @@ def display_contact_llm_response(llm_response):
             if file_path in file_path_list:
                 continue
 
-            # ページ番号が取得できた場合のみ、ページ番号を表示（ドキュメントによっては取得できない場合がある）
-            if "page" in document.metadata:
-                # ページ番号を取得
-                page_number = document.metadata["page"]
-                # 「ファイルパス」と「ページ番号」
-                file_info = f"{file_path}"
+            # ページ番号が取得できた場合のみ取得
+            page_number_raw = document.metadata.get("page") if document.metadata else None
+            # file_info は辞書で保持（ページ番号があれば表示用に +1 して含める）
+            if page_number_raw is not None:
+                try:
+                    page_number = int(page_number_raw) + 1
+                except Exception:
+                    page_number = page_number_raw
+                file_info_list.append({"source": file_path, "page_number": page_number})
             else:
-                # 「ファイルパス」のみ
-                file_info = f"{file_path}"
-
-            # 参照元のありかに応じて、適したアイコンを取得
-            icon = utils.get_source_icon(file_path)
-            # ファイル情報を表示
-            st.info(file_info, icon=icon)
-
-            # 重複チェック用に、ファイルパスをリストに順次追加
+                file_info_list.append({"source": file_path})
+            # ファイル情報リストと重複チェックリストに追加
             file_path_list.append(file_path)
-            # ファイル情報をリストに順次追加
-            file_info_list.append(file_info)
 
     # 表示用の会話ログに格納するためのデータを用意
     # - 「mode」: モード（「社内文書検索」or「社内問い合わせ」）
     # - 「answer」: LLMからの回答
     # - 「message」: 補足メッセージ
-    # - 「file_path_list」: ファイルパスの一覧リスト
+    # - 「file_info_list」: ファイル情報の一覧リスト
     content = {}
     content["mode"] = ct.ANSWER_MODE_2
     content["answer"] = llm_response["answer"]
@@ -410,4 +485,3 @@ def display_contact_llm_response(llm_response):
         content["file_info_list"] = file_info_list
 
     return content
-

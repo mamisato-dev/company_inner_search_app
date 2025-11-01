@@ -50,7 +50,9 @@ RAG_TOP_FOLDER_PATH = "./data"
 SUPPORTED_EXTENSIONS = {
     ".pdf": PyMuPDFLoader,
     ".docx": Docx2txtLoader,
-    ".csv": lambda path: CSVLoader(path, encoding="utf-8")
+    ".csv": lambda path: CSVLoader(path, encoding="utf-8"),
+    # テキストファイル(.txt)も読み込み対象に追加
+    ".txt": lambda path: TextLoader(path, encoding="utf-8")
 }
 WEB_URL_LOAD_TARGETS = [
     "https://generative-ai.web-camp.io/"
@@ -116,6 +118,7 @@ DISP_ANSWER_ERROR_MESSAGE = "回答表示に失敗しました。"
 # 分割設定系
 # ==========================================
 CHUNK_SIZE = 500
-CHUNK_OVERLAP = 50
+CHUNK_OVERLAP = 10
 SEPARATOR = "\n"
+BATCH_SIZE = 50
 
