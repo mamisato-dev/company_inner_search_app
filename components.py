@@ -47,84 +47,104 @@ def display_main_layout():
     st.markdown(
     """
     <style>
-    /* 🌐 ページ全体のレイアウト幅調整 */
+    /* ===== 全体レイアウト調整 ===== */
     .block-container {
         max-width: 100% !important;
-        padding: 0;
+        padding: 1rem 3rem 2rem 3rem; /* 左右にゆとりを追加 */
     }
 
-    /* ✅ 左カラムを sticky 固定に変更 */
+    /* ===== 左カラム ===== */
     #left-col {
         position: sticky;
         top: 0;
-        background-color: #e0e0e0 !important;
-        padding: 2rem 1.5rem !important;
-        border-right: 2px solid #cccccc;
-        z-index: 10;
-        height: auto !important;
+        background-color: #f5f5f5 !important;
+        padding: 2rem 1.5rem;
+        border-radius: 8px;
+        border-right: 2px solid #e0e0e0;
+        margin-left: 1rem;
+        margin-right: 2rem; /* ✅ 右に余白を追加 */
+        height: auto;
         overflow-y: auto;
     }
 
-    /* ✅ 右カラム（タイトル見切れ防止＆中央寄せ） */
+    /* ===== 右カラム ===== */
     [data-testid="column"]:last-of-type {
         display: flex;
         flex-direction: column;
         justify-content: flex-start;
         align-items: center;
-        text-align: center;
-        padding: 2rem 3rem !important;
-        background: transparent !important;
+        text-align: left;
+        padding: 2rem 3rem; /* ✅ 左右余白を広めに */
         width: 100%;
     }
 
-    /* ✅ チャットエリア（右カラム内で中央配置） */
+    /* ===== チャット領域 ===== */
     .chat-area {
         width: 85%;
-        max-width: 950px;
+        max-width: 900px;
         text-align: left;
-        margin: 1rem auto 0 auto;
+        margin: 1.5rem auto 0 auto;
+        line-height: 1.6;
     }
 
-    /* ✅ 入力欄と送信ボタン（右カラム下部） */
-    .input-area {
-        position: sticky;
-        bottom: 1rem;
+    /* ===== チャットバブル風スタイル（質問・回答表示） ===== */
+    .stChatMessage {
+        margin-bottom: 1rem;
+    }
+
+    [data-testid="stChatMessage"] div[data-testid="stMarkdownContainer"] p {
+        padding: 0.8rem 1rem;
+        border-radius: 8px;
+        max-width: 95%;
+    }
+
+    /* ユーザー側（右寄せ） */
+    [data-testid="stChatMessage"][data-testid="user"] div[data-testid="stMarkdownContainer"] p {
+        background-color: #e6f3ff !important;
+        margin-left: auto;
+        text-align: right;
+    }
+
+    /* アシスタント側（左寄せ） */
+    [data-testid="stChatMessage"][data-testid="assistant"] div[data-testid="stMarkdownContainer"] p {
+        background-color: #f1f1f1 !important;
+        margin-right: auto;
+    }
+
+    /* ===== チャット入力欄（右カラム下部固定） ===== */
+    section[data-testid="stChatInput"] {
+        max-width: 70%;
+        margin: 2rem auto 0 auto;
         display: flex;
         justify-content: center;
-        z-index: 20;
-        background: #ffffff;
-        padding: 0.8rem 1rem;
+        align-items: center;
+        background-color: #fafafa;
         border-radius: 12px;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-    }
-
-    .input-box {
-        display: flex;
-        gap: 0.5rem;
-        width: 90%;
-        max-width: 900px;
-    }
-
-    /* テキスト入力欄のスタイル */
-    .stTextInput input {
-        border-radius: 12px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
         padding: 0.8rem 1rem;
-        border: 1px solid #ccc;
-        width: 100%;
     }
 
-    /* ✅ 「送信」ボタンをカスタマイズ（角丸＋グリーン） */
-    .stButton>button {
+    /* ===== テキスト入力欄の見た目 ===== */
+    textarea {
+        border-radius: 8px !important;
+        border: 1px solid #ccc !important;
+        padding: 0.7rem !important;
+        width: 100% !important;
+        resize: none !important;
+    }
+
+    /* ===== ✅ 送信ボタン（グリーンの角丸ボタン） ===== */
+    button[kind="secondaryFormSubmit"] {
         background-color: #4CAF50 !important;
         color: white !important;
-        border: none !important;
-        border-radius: 8px !important;
-        padding: 0.6rem 1.2rem !important;
         font-weight: bold !important;
+        border: none !important;
+        border-radius: 6px !important;
+        padding: 0.6rem 1.2rem !important;
+        margin-left: 0.5rem !important;
         cursor: pointer !important;
     }
-
-    .stButton>button:hover {
+    button[kind="secondaryFormSubmit"]:hover {
         background-color: #45a049 !important;
     }
     </style>
