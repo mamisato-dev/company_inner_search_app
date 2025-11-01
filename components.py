@@ -44,113 +44,6 @@ def display_main_layout():
     """
 
     # ======== CSSでデザイン調整 ========
-    st.markdown(
-    """
-    <style>
-    /* ===== 全体レイアウト調整 ===== */
-    .block-container {
-        max-width: 100% !important;
-        padding: 1rem 3rem 2rem 3rem; /* 左右にゆとりを追加 */
-    }
-
-    /* ===== 左カラム ===== */
-    #left-col {
-        position: sticky;
-        top: 0;
-        background-color: #f5f5f5 !important;
-        padding: 2rem 1.5rem;
-        border-radius: 8px;
-        border-right: 2px solid #e0e0e0;
-        margin-left: 1rem;
-        margin-right: 2rem; /* ✅ 右に余白を追加 */
-        height: auto;
-        overflow-y: auto;
-    }
-
-    /* ===== 右カラム ===== */
-    [data-testid="column"]:last-of-type {
-        display: flex;
-        flex-direction: column;
-        justify-content: flex-start;
-        align-items: center;
-        text-align: left;
-        padding: 2rem 3rem; /* ✅ 左右余白を広めに */
-        width: 100%;
-    }
-
-    /* ===== チャット領域 ===== */
-    .chat-area {
-        width: 85%;
-        max-width: 900px;
-        text-align: left;
-        margin: 1.5rem auto 0 auto;
-        line-height: 1.6;
-    }
-
-    /* ===== チャットバブル風スタイル（質問・回答表示） ===== */
-    .stChatMessage {
-        margin-bottom: 1rem;
-    }
-
-    [data-testid="stChatMessage"] div[data-testid="stMarkdownContainer"] p {
-        padding: 0.8rem 1rem;
-        border-radius: 8px;
-        max-width: 95%;
-    }
-
-    /* ユーザー側（右寄せ） */
-    [data-testid="stChatMessage"][data-testid="user"] div[data-testid="stMarkdownContainer"] p {
-        background-color: #e6f3ff !important;
-        margin-left: auto;
-        text-align: right;
-    }
-
-    /* アシスタント側（左寄せ） */
-    [data-testid="stChatMessage"][data-testid="assistant"] div[data-testid="stMarkdownContainer"] p {
-        background-color: #f1f1f1 !important;
-        margin-right: auto;
-    }
-
-    /* ===== チャット入力欄（右カラム下部固定） ===== */
-    section[data-testid="stChatInput"] {
-        max-width: 70%;
-        margin: 2rem auto 0 auto;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        background-color: #fafafa;
-        border-radius: 12px;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-        padding: 0.8rem 1rem;
-    }
-
-    /* ===== テキスト入力欄の見た目 ===== */
-    textarea {
-        border-radius: 8px !important;
-        border: 1px solid #ccc !important;
-        padding: 0.7rem !important;
-        width: 100% !important;
-        resize: none !important;
-    }
-
-    /* ===== ✅ 送信ボタン（グリーンの角丸ボタン） ===== */
-    button[kind="secondaryFormSubmit"] {
-        background-color: #4CAF50 !important;
-        color: white !important;
-        font-weight: bold !important;
-        border: none !important;
-        border-radius: 6px !important;
-        padding: 0.6rem 1.2rem !important;
-        margin-left: 0.5rem !important;
-        cursor: pointer !important;
-    }
-    button[kind="secondaryFormSubmit"]:hover {
-        background-color: #45a049 !important;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
 
     # ======== 左右カラム構成 ========
     left_col, right_col = st.columns([1.2, 3], gap="medium")
@@ -215,27 +108,40 @@ def display_main_layout():
         st.markdown('<div class="input-area">', unsafe_allow_html=True)
         st.markdown('<div class="input-box">', unsafe_allow_html=True)
 
-        with st.form(key="chat_form", clear_on_submit=True):
+        with st.form(key="chat_form", clear_on_submit=True) as chat_form:
             cols = st.columns([9, 1], gap="small")
             with cols[0]:
                 user_input = st.text_input("", placeholder=ct.CHAT_INPUT_HELPER_TEXT, key="main_chat_text")
             with cols[1]:
-                # 紙飛行機マークをボタンラベルにして送信ボタンにする
-                submitted = st.form_submit_button("✈️")
+                st.markdown("""
+                    <style>
+                    button[kind="secondaryFormSubmit"] svg { display: none !important; }
+                    button[kind="secondaryFormSubmit"]::after { content: "送信"; }
+                    </style>
+                """, unsafe_allow_html=True)
+            submitted = st.form_submit_button("送信")
 
         st.markdown('</div>', unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
         # フォームが送信された場合のみ文字列を返（未送信時は None）
-        if submitted and user_input:
+        if submitted:
             return user_input, response_container, conversation_container
         return None, response_container, conversation_container
 
-
 def display_app_title():
     """
-    タイトル表示
+    アプリのタイトルを表示する関数
+
+    Parameters
+    ----------
+    なし
+
+    Returns
+    -------
+    なし
     """
+    st.markdown(f"## {ct.APP_NAME}")
     st.markdown(f"## {ct.APP_NAME}")
 
 def display_select_mode():
