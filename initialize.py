@@ -20,6 +20,8 @@ from langchain.text_splitter import CharacterTextSplitter
 from langchain_openai import OpenAIEmbeddings
 from langchain_community.vectorstores import Chroma
 import constants as ct
+import pandas as pd
+from langchain.schema import Document as LangchainDocument
 
 
 ############################################################
@@ -219,7 +221,30 @@ def file_load(path, docs_all):
 
     # 想定していたファイル形式の場合のみ読み込む
     if file_extension in ct.SUPPORTED_EXTENSIONS:
-        # ファイルの拡張子に合ったdata loaderを使ってデータ読み込み
+        # CSV は構造化データなので、DataFrame として保持しつつ
+        # ベクターストアには「全データを一つの Document」として格納する
+        if file_extension == ".csv":
+            try:
+                df = pd.read_csv(path)
+            except Exception:
+                # 文字コードなどで失敗した場合は、TextLoader にフォールバック
+                loader = ct.SUPPORTED_EXTENSIONS[file_extension](path)
+                docs = loader.load()
+                docs_all.extend(docs)
+                return
+
+            # セッションに DataFrame を保存して、構造的クエリで直接参照できるようにする
+            if "csv_tables" not in st.session_state:
+                st.session_state["csv_tables"] = {}
+            st.session_state["csv_tables"][os.path.basename(path)] = df
+
+            # DataFrame を CSV 文字列としてまとめて Document にする（分割されないように1ドキュメント）
+            content = df.to_csv(index=False)
+            doc = LangchainDocument(page_content=content, metadata={"source": path, "file_name": os.path.basename(path), "type": "csv"})
+            docs_all.append(doc)
+            return
+
+        # 通常のファイルは既存の loader を使う
         loader = ct.SUPPORTED_EXTENSIONS[file_extension](path)
         docs = loader.load()
         docs_all.extend(docs)

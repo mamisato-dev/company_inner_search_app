@@ -108,6 +108,100 @@ if chat_message:
     st.session_state.messages.append({"role": "user", "content": chat_message})
 
     # ==========================================
+    # 7-1-1. CSV（社員名簿）に関する構造化クエリのハンドリング
+    # - 社員名簿のような構造化データはアプリ側で厳密に集計した方が正確
+    # - st.session_state に保持されている csv_tables を参照して処理
+    # ==========================================
+    try:
+        csv_tables = st.session_state.get("csv_tables", {})
+        # 想定キー: '社員名簿.csv'
+        roster_df = csv_tables.get("社員名簿.csv") if isinstance(csv_tables, dict) else None
+        handled_by_app = False
+        if roster_df is not None and isinstance(roster_df, (object,)):
+            # 単純なキーワード判定（人事部、一覧、人数、社員名簿 など）
+            q = chat_message.lower()
+            keywords = ["社員名簿", "人事部", "部署", "一覧", "人数", "所属"]
+            if any(k in q for k in keywords):
+                # try to extract department name (e.g., '人事部')
+                import re
+                m = re.search(r"([\u4e00-\u9fff\w\-]{1,8}部)", chat_message)
+                if m:
+                    dept = m.group(1)
+                    try:
+                        filtered = roster_df[roster_df['部署'].astype(str).str.contains(dept, na=False)]
+                    except Exception:
+                        # カラム名が想定と異なる場合は日本語 '部署' を探す柔軟対応
+                        col_candidates = [c for c in roster_df.columns if '部署' in c or '所属' in c]
+                        if col_candidates:
+                            col = col_candidates[0]
+                            filtered = roster_df[roster_df[col].astype(str).str.contains(dept, na=False)]
+                        else:
+                            filtered = roster_df.iloc[0:0]
+                else:
+                    # 部署指定がなければ、もし '人数' を聞かれていれば全体の人数を返す
+                    if '人数' in q or '何名' in q:
+                        filtered = roster_df
+                    else:
+                        # '一覧' などの要求なら全件を返す
+                        filtered = roster_df
+
+                # 結果を組み立て（CSV 形式の表と要約）
+                try:
+                    row_count = len(filtered)
+                    summary = f"該当レコード数: {row_count} 件。\n"
+                    csv_text = filtered.to_csv(index=False)
+                    # 表示用の回答は要約のみとし、表は conversation_container 内で DataFrame として表示する
+                    final_answer = summary
+                except Exception:
+                    final_answer = "CSV の集計結果を生成できませんでした。"
+
+                # content の形は display_conversation_log に合わせる
+                content = {
+                    "mode": ct.ANSWER_MODE_2,
+                    "answer": final_answer,
+                    "message": "情報源",
+                    "file_info_list": [{"source": "社員名簿.csv"}]
+                }
+
+                # セッションに assistant の回答を追加して描画
+                st.session_state.messages.append({"role": "assistant", "content": content})
+                try:
+                    with conversation_container:
+                        cn.display_conversation_log()
+                        # テーブル表示とダウンロードボタンを追加
+                        try:
+                            st.dataframe(filtered)
+                            st.download_button("CSV をダウンロード", data=csv_text, file_name="社員名簿_filtered.csv", mime="text/csv")
+                        except Exception:
+                            # DataFrame 表示に失敗したら代替でテキストを表示
+                            st.code(csv_text)
+                except Exception:
+                    cn.display_conversation_log()
+                    # フォールバックで画面下部に生CSVを出す
+                    try:
+                        st.code(csv_text)
+                    except Exception:
+                        pass
+                handled_by_app = True
+        # もしアプリ側で処理できた場合は LLM 呼び出しをスキップ
+        if handled_by_app:
+            # skip LLM processing by jumping to next iteration of main loop
+            # Streamlit scripts are re-run, so just return early from this flow
+            # (we've already appended assistant response and re-rendered)
+            pass_flag = True
+        else:
+            pass_flag = False
+    except Exception as e:
+        # 構造化処理で問題が発生したらログに残して通常パスへフォールバック
+        logger.error(f"CSV handling error: {e}")
+        pass_flag = False
+
+    if pass_flag:
+        # avoid calling LLM and continue app execution
+        # we've already appended and rendered the assistant response, stop further execution
+        st.stop()
+
+    # ==========================================
     # 7-2. LLMからの回答取得（右カラム上部の response_container 内でスピナーを表示）
     # ==========================================
     try:
