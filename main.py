@@ -232,34 +232,40 @@ if chat_message:
             st.stop()
 
     # ==========================================
-    # 7-3. LLMからの回答表示（画面上で一時表示）
-    # - display_* 関数は表示と同時に画面表示用の content を返す仕様のため、
-    #   ローカルに content を受け取った後、セッションデータへ追加します。
+    # 7-3. LLMからの回答表示処理
     # ==========================================
-    # ここでは右カラム上部の一時表示コンテナ（response_container）を使って
-    # LLM応答を右カラム内の入力欄の上に表示します。response_container がない場合は
-    # 既存の st.chat_message を使って代替表示します。
-    # prepare content (no rendering)
+    # - 取得済みの llm_response を表示用の content に変換（prepare_* に委譲）
+    # - ユーザーが「全件表示」コマンドを送った場合は既存の会話ログを再描画して早期終了
+    # - 通常は content を作成してセッションへ一度だけ追加し、会話ログを再描画する
+
+    # 全件表示コマンド（例: 「すべて」「全件」）の判定
+    show_all_trigger = any(keyword in chat_message for keyword in ["すべて", "全件", "全て表示", "全部見せて"])
+    if show_all_trigger:
+        st.session_state.show_all_related_docs = True
+        st.success("📚 関連する全ての資料を表示します。")
+        # 会話ログを再描画して処理を終了
+        try:
+            with conversation_container:
+                cn.display_conversation_log()
+            st.stop()
+        except Exception:
+            # 再描画に失敗した場合は通常処理にフォールバック
+            pass
+
+    # content の作成（描画は display_conversation_log に任せる）
     if st.session_state.mode == ct.ANSWER_MODE_1:
         content = cn.prepare_search_content(llm_response)
     else:
         content = cn.prepare_contact_content(llm_response)
 
-    # 一時表示は不要（spinner を表示していたので回答は会話ログにのみ表示する）
     logger.info({"message": content, "application_mode": st.session_state.mode})
 
-    # ==========================================
-    # 7-4. 会話ログへの追加（回答をセッションに保存）
-    # - すでにユーザメッセージは追加済みのため、ここでは assistant のみ追加する
-    # - 追加後に再描画して右カラムの会話ログに反映させる
-    # ==========================================
+    # assistant の応答を一度だけ追加して会話ログを再描画
     st.session_state.messages.append({"role": "assistant", "content": content})
-    # 生成後は conversation_container に最新の会話ログを再描画して即時反映する
     try:
         with conversation_container:
             cn.display_conversation_log()
     except Exception:
-        # フォールバック
         cn.display_conversation_log()
 
 

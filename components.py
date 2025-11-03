@@ -242,22 +242,30 @@ def display_conversation_log():
                             st.success(f"{message['content']['main_file_path']}", icon=icon)
                         
                         # ==========================================
-                        # ユーザー入力値と関連性が高いサブドキュメントのありかを表示
+                        # サブドキュメント（関連資料）の表示
                         # ==========================================
                         if "sub_message" in message["content"]:
-                            # 補足メッセージの表示
                             st.markdown(message["content"]["sub_message"])
 
-                            # サブドキュメントのありかを一覧表示
-                            for sub_choice in message["content"]["sub_choices"]:
-                                # 参照元のありかに応じて、適したアイコンを取得
+                            # ✅ ここで「上位5件 or 全件表示」を制御
+                            all_docs = message["content"]["sub_choices"]
+                            show_all = st.session_state.get("show_all_related_docs", False)
+
+                            if not show_all:
+                                docs_to_show = all_docs[:5]  # 上位5件のみ表示
+                                if len(all_docs) > 5:
+                                    st.markdown(f"上位5件を表示中（全{len(all_docs)}件中）。『すべて』と入力すると全件表示します。")
+                            else:
+                                docs_to_show = all_docs
+                                st.markdown(f"全{len(all_docs)}件を表示中。")
+
+                            for sub_choice in docs_to_show:
                                 icon = utils.get_source_icon(sub_choice['source'])
-                                # 参照元ドキュメントのページ番号が取得できた場合にのみ、ページ番号を表示
                                 if "page_number" in sub_choice:
                                     st.info(f"{sub_choice['source']} (ページNo.{sub_choice['page_number']})", icon=icon)
                                 else:
                                     st.info(f"{sub_choice['source']}", icon=icon)
-                
+                                        
                 # 「社内問い合わせ」の場合の表示処理
                 else:
                     # LLMからの回答を表示
